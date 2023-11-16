@@ -1,31 +1,82 @@
-(defpackage #:misc
-  (:use #:cl #:lol) 
-  (:export #:abbrev #:abbrevs #:mvbind #:on lol:this #:repeat #:maptimes #:mappl #:else #:some-values #:some-value #:car-if #:list-if #:any-equal #:any-string-equal #:defcompose #:compose-method #:compose-method-if #:symbol-suffix #:symbol-number #:def-instance-p #:do-on #:pushnew-alist #:mv-mapcar #:take #:mapby #:unordered-equal))
-(in-package #:misc)
+(defpackage #:utils/misc
+  (:nicknames :misc-utils)
+  (:use #:cl) 
+  (:import-from :lol :defmacro! :group :alambda :self)
+  (:import-from :alexandria :when-let :curry :once-only)
+  (:export #:with-minmax #:macrolet_ #:with-if #:lift #:random-integer #:*epsilon* #:approx= #:rapprox= #:lapprox= #:cons-if #:nif #:cmp #:alias #:aliases #:mvbind #:on :this #:repeat #:maptimes #:mappl #:else #:some-values #:some-value #:any-equal #:any-string-equal #:split-if #:rest-if #:defcompose #:compose-method #:compose-method-if #:symbol-suffix #:symbol-number #:def-instance-p #:do-on #:pushnew-alist #:mv-mapcar #:take #:mapby #:unordered-equal #:product))
+
+(in-package #:utils/misc)
+
+(defparameter *epsilon* 0.0001)
+
+(defmacro with-minmax ((x y) &body body)
+  (once-only (x y)
+    `(with-if (< ,x ,y)
+              (let ((min (then ,x ,y))
+                    (max (then ,y ,x)))
+                ,@body))))
+
+(defmacro macrolet_ (definitions body)
+  "Macrolet with automatic ignore declarations for variables named _."
+  `(macrolet
+     ,(mapcar (lambda (d)
+                (destructuring-bind (name lambda-list local-form) d
+                  (if (find '_ lambda-list)
+                      (list name lambda-list '(declare (ignore _)) local-form)
+                      d)))
+              definitions)
+     ,body))
+
+(defmacro with-if (test body)
+  "Expands to (if test body-1 body-2), where body-1 has (then a b) replaced with a, and body-2 has (then a b) replaced with b."
+  `(if ,test
+       (macrolet_ ((then (then-form _) then-form)) ,body)
+       (macrolet_ ((then (_ else-form) else-form)) ,body)))
+
+(defun lift (f)
+  (curry #'apply f))
+
+(defun random-integer (min max)
+  (+ (random (- max min)) min))
+
+(defun approx= (x y &key (epsilon *epsilon*))
+  (unless epsilon (error "Epsilon undefined"))
+  (< (abs (- x y)) epsilon))
+
+(defun rapprox= (x y &key (epsilon *epsilon*))
+  (unless epsilon (error "Epsilon undefined"))
+  (< 0 (- y x) epsilon))
+
+(defun lapprox= (x y &key (epsilon *epsilon*))
+  (unless epsilon (error "Epsilon undefined"))
+  (< 0 (- x y) epsilon))
+
+(defun cons-if (a b)
+  "Return `(cons a b)` if `a`, otherwise `nil`"
+  (when a (cons a b)))
+
+; Hoyte 'LoL', p. 62 after Graham 'On Lisp
+(defmacro! nif (expr pos zero neg)
+  `(let ((,g!result ,expr))
+     (cond ((plusp ,g!result) ,pos)
+           ((zerop ,g!result) ,zero)
+           (t ,neg))))
+
+(defmacro cmp (a b > = <)
+  `(nif (- ,a ,b) ,> ,= ,<))
 
 ; See Paul Graham 'On Lisp', p. 214
-(defmacro abbrev (short long)
-  `(defmacro ,short (&rest args)
-     `(,',long ,@args)))
+(defmacro alias (new old)
+  `(defmacro ,new (&rest args)
+     `(,',old ,@args)))
 
-(defmacro abbrevs (&rest names)
+(defmacro aliases (&rest names)
   `(progn
      ,@(mapcar #'(lambda (pair)
-                   `(abbrev ,@pair))
+                   `(alias ,@pair))
                (group names 2))))
 
-(abbrev mvbind multiple-value-bind)
-
-
-(defun car-if (obj)
-  "If `obj` is a cons return `(car obj)`, else return `obj`."
-  (if (consp obj) (car obj) obj))
-
-(defun list-if (obj)
-  "If `obj` is a not a list return `(list obj`), else return `obj`."
-   (if (listp obj) obj (list obj)))
-
-                
+(alias mvbind multiple-value-bind)
 
 (defmacro on (init-form &body body)
   "Bind `this` to `init-form`, evalutate `body` and then return `this`."
@@ -68,6 +119,7 @@
        (setf ,place-2 ,g))))
 
 (defmacro any-equal (value &rest values)
+  "Return t if `value` is equal to any of `values`"
   `(or ,@(mapcar (lambda (v) `(equal ,v ,value)) values)))
 
 (defmacro any-string-equal (string &rest strings)
@@ -78,6 +130,12 @@
   (let ((i (position-if predicate seq)))
     (values (subseq seq 0 i)
             (subseq seq i))))
+
+(defun rest-if (predicate seq)
+  "The the tail of the list from the first element which satisfies predicate."
+  (when-let ((i (position-if predicate seq)))
+    (subseq seq i)))
+
 
 ;; See Paul Graham 'ANSI Common Lisp'
 (defun compose (&rest fns)
@@ -183,3 +241,12 @@
   (labels ((hash-sort (list)
              (sort (mapcar #'sxhash list) #'<)))
     (equal (hash-sort list-1) (hash-sort list-2))))
+
+(defun product (&rest lists)
+  "Return the Cartesian product of lists."
+  (if (cdr lists)
+      (mapcan (lambda (a)
+                (mapcar (lambda (b) (cons a b))
+                        (apply #'product (cdr lists))))
+              (car lists))
+      (mapcar #'list (car lists))))
