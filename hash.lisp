@@ -1,7 +1,7 @@
 (defpackage :utils/hash
   (:nicknames :hash-utils)
   (:use :cl :misc-utils)
-  (:export :add-hash :get-hash :presentp :hash-table-keys :key-present-error :key-absent-error))
+  (:export :add-hash :get-hash :presentp :hash-table-keys :hash-table-values :key-present-error :key-absent-error))
 (in-package :utils/hash)
 
 (defun add-hash (hash-table &key (key (gensym)) value)
@@ -22,6 +22,10 @@
 (defun hash-table-keys (hash-table)
   (on nil
     (maphash (lambda (k v) (declare (ignore v)) (push k this)) hash-table)))
+
+(defun hash-table-values (hash-table)
+  (on nil
+    (maphash (lambda (k v) (declare (ignore k)) (push v this)) hash-table)))
 
 (define-condition key-present-error (error) ((key :initarg :key :reader key)))
 (define-condition key-absent-error (error) ((key :initarg :key :reader key)))

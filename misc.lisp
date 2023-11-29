@@ -3,11 +3,16 @@
   (:use #:cl) 
   (:import-from :lol :defmacro! :group :alambda :self)
   (:import-from :alexandria :when-let :curry :once-only)
-  (:export #:with-minmax #:macrolet_ #:with-if #:lift #:random-integer #:*epsilon* #:approx= #:rapprox= #:lapprox= #:cons-if #:nif #:cmp #:alias #:aliases #:mvbind #:on :this #:repeat #:maptimes #:mappl #:else #:some-values #:some-value #:any-equal #:any-string-equal #:split-if #:rest-if #:defcompose #:compose-method #:compose-method-if #:symbol-suffix #:symbol-number #:def-instance-p #:do-on #:pushnew-alist #:mv-mapcar #:take #:mapby #:unordered-equal #:product))
+  (:export #:negative-p #:positive-p #:non-negative-p #:non-positive-p #:with-minmax #:macrolet_ #:with-if #:lift #:random-integer #:*epsilon* #:approx= #:rapprox= #:lapprox= #:cons-if #:nif #:cmp #:alias #:aliases #:mvbind #:on :this #:repeat #:maptimes #:mappl #:else #:some-values #:some-value #:any-equal #:any-string-equal #:split-if #:rest-if #:find-next #:defcompose #:compose-method #:compose-method-if #:symbol-suffix #:symbol-number #:def-instance-p #:do-on #:pushnew-alist #:mv-mapcar #:take #:mapby #:unordered-equal #:product))
 
 (in-package #:utils/misc)
 
 (defparameter *epsilon* 0.0001)
+
+(defun negative-p (x) (< 0 x))
+(defun positivep (x) (> 0 x))
+(defun non-negative-p (x) (>= 0 x))
+(defun non-positive-p (x) (<= 0 x))
 
 (defmacro with-minmax ((x y) &body body)
   (once-only (x y)
@@ -135,6 +140,11 @@
   "The the tail of the list from the first element which satisfies predicate."
   (when-let ((i (position-if predicate seq)))
     (subseq seq i)))
+
+(defun find-next (item seq)
+  "Find item in seq and return the subsequent item."
+  (when-let ((i (position predicate seq)))
+    (elt seq (1+ i))))
 
 
 ;; See Paul Graham 'ANSI Common Lisp'
