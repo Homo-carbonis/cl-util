@@ -19,14 +19,6 @@
     (declare (ignore v))
     p))
 
-(defun hash-table-keys (hash-table)
-  (on nil
-    (maphash (lambda (k v) (declare (ignore v)) (push k this)) hash-table)))
-
-(defun hash-table-values (hash-table)
-  (on nil
-    (maphash (lambda (k v) (declare (ignore k)) (push v this)) hash-table)))
-
 (define-condition key-present-error (error) ((key :initarg :key :reader key)))
 (define-condition key-absent-error (error) ((key :initarg :key :reader key)))
 

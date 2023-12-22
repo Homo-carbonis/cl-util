@@ -1,18 +1,37 @@
 (defpackage #:utils/misc
   (:nicknames :misc-utils)
-  (:use #:cl) 
+  (:use #:cl #:trivia) 
   (:import-from :lol :defmacro! :group :alambda :self)
   (:import-from :alexandria :when-let :curry :once-only)
-  (:export #:negative-p #:positive-p #:non-negative-p #:non-positive-p #:with-minmax #:macrolet_ #:with-if #:lift #:random-integer #:*epsilon* #:approx= #:rapprox= #:lapprox= #:cons-if #:nif #:cmp #:alias #:aliases #:mvbind #:on :this #:repeat #:maptimes #:mappl #:else #:some-values #:some-value #:any-equal #:any-string-equal #:split-if #:rest-if #:find-next #:defcompose #:compose-method #:compose-method-if #:symbol-suffix #:symbol-number #:def-instance-p #:do-on #:pushnew-alist #:mv-mapcar #:take #:mapby #:unordered-equal #:product))
+  (:import-from :serapeum :mapply)
+  (:export #:zip #:unzip #:unzip2 #:map-match #:negativep #:positivep #:non-negative-p #:non-positive-p #:with-minmax #:macrolet_ #:with-if #:lift #:random-integer #:*epsilon* #:approx= #:rapprox= #:lapprox= #:cons-if #:nif #:cmp #:alias #:aliases #:mvbind #:on :this #:map-while #:mapn #:maptimes  #:some-values #:some-value #:any-equal #:any-string-equal #:split-at #:split-on #:split-if #:rest-if #:find-next #:defcompose #:compose-method #:compose-method-if #:symbol-suffix #:symbol-number #:def-instance-p #:do1 #:dolines #:dofile #:pushnew-alist #:mv-mapcar #:take #:mapby #:unordered-equal #:product))
 
 (in-package #:utils/misc)
 
 (defparameter *epsilon* 0.0001)
 
-(defun negative-p (x) (< 0 x))
+(defun negativep (x) (< 0 x))
 (defun positivep (x) (> 0 x))
 (defun non-negative-p (x) (>= 0 x))
 (defun non-positive-p (x) (<= 0 x))
+
+(defun unzip2 (list)
+  (values (mapcar #'first list) (mapcar #'second list)))
+
+(defun unzip (list)
+  (values-list (reduce (curry #'mapcar #'cons) list
+                       :from-end t
+                       :initial-value (make-list (length (car list))))))
+
+(defun zip (&rest lists)
+  (apply #'mapcar #'list lists))
+
+(defmacro map-match (pattern-list-pairs &body body)
+  (multiple-value-bind (patterns lists) (unzip pattern-list-pairs) 
+    (let* ((vars (mapn #'gensym (length lists)))
+           (bindings (zip patterns vars)))
+      `(mapcar (lambda ,vars (let-match ,bindings ,@body)) ,lists))))
+
 
 (defmacro with-minmax ((x y) &body body)
   (once-only (x y)
@@ -89,7 +108,12 @@
      ,@body
      this))
 
-(defun repeat (f n)
+(defun map-while (f &optional (predicate identity))
+  (loop for x = (funcall f)
+        while (predicate x)
+        collect x))
+
+(defun mapn (f n)
   "Repeat `f` `n` times and collect results"
   (loop for i below n collect (funcall f)))
 
@@ -97,17 +121,10 @@
   "map `f` over the integers 0 <= i < n"
   (loop for i below n collect (funcall f i)))
 
-(defun mappl (function list)
-  "map `function` over `list` with `apply`"
-  (mapcar (lambda (a) (apply function a)) list))
-
-(defmacro else (var form)
-  "If 'var' is nil return 'form' else return 'var'."
-  `(if ,var ,var ,form))
 
 (defmacro some-values (predicate &rest sequences)
   "Like 'some' execpt it returns the first values which satisfy 'predicate'."
-  (let ((args (repeat #'gensym (length sequences))))
+  (let ((args (mapn #'gensym (length sequences))))
     `(some (lambda ,args (if (funcall ,predicate ,@args) (list ,@args))) ,@sequences)))
 
 (defmacro! some-value (predicate sequence)
@@ -129,6 +146,17 @@
 
 (defmacro any-string-equal (string &rest strings)
   `(or ,@(mapcar (lambda (s) `(string-equal ,s ,string)) strings)))
+
+
+(defun split-at (value seq)
+  (let ((i (position value seq)))
+    (values (subseq seq 0 i)
+            (subseq seq i))))
+
+(defun split-on (value seq)
+  (let ((i (position value seq)))
+    (values (subseq seq 0 i)
+            (subseq seq (1+ i)))))
 
 (defun split-if (predicate seq)
   "Split seq at the first element which satisfies predicate."
@@ -207,8 +235,24 @@
        (defmethod ,name (obj) nil))))
 
 
-(defmacro do-on (varlist end-test-form &body body)
-  `(do ,(mapcar (lambda (var) (list (car var) (cdr var) (cdr var))) varlist) ,(list end-test-form nil) ,@body))
+(defmacro do1 (varlist end-test-result-forms &body body)
+  `(do ,(mapcar (lambda (var) `(,(first var) ,(second var) ,(second var))) varlist)
+       ,end-test-result-forms
+       ,@body))
+
+(defmacro dolines ((line stream &optional result) &body body)
+  `(do1 ((,line (read-line ,stream nil))) ((not ,line) ,result)
+     ,@body))
+
+(defmacro! dofile ((line file &optional result) &body body)
+  `(with-open-file (,g!input ,file)
+     (dolines (,line ,g!input ,result) ,@body)))
+
+(defun read-list (stream)
+  (map-while #'read )
+  
+  (read-from-string string nil)
+  )
 
 (defmacro! pushnew-alist (key value alist)
   `(let ((,g!e (find `(,,key) ,alist :key #'car)))
@@ -229,7 +273,7 @@
 
 (defmacro mv-mapcar (n function form)
   "Map `function` over `n` lists produced by `form`"
-  (let ((syms (repeat #'gensym n)))
+  (let ((syms (mapn #'gensym n)))
     `(mvbind ,syms ,form
          (mapcar ,function ,@syms))))
 
