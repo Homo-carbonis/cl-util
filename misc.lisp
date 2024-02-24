@@ -12,11 +12,10 @@
 
 ;TODO Write reduce-n
 (defun reduce-2 (function sequence &key (key #'identity) (start 0) (end nil) (initial-value nil ivp))
-  (iter (for i from (+ start (if ivp 2 1)) below (or end (length sequence)))
+  (iter (for i from (+ start (if ivp 1 2)) below (or end (length sequence)))
         (for x1 = (funcall key (elt sequence (1- i))))
         (for x2 = (funcall key (elt sequence i)))
-        (for k initially initial-value then (funcall function k x1 x2))
-        (format t "i:~a x1:~a x2:~a k:~a~%" i x1 x2 k)
+        (for k initially (if ivp initial-value (elt sequence 0)) then (funcall function k x1 x2))
         (finally (return k))))
 
 (defun read-num ()
