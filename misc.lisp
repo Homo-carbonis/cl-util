@@ -1,14 +1,48 @@
 (defpackage #:utils/misc
   (:nicknames :misc-utils)
-  (:use #:cl #:trivia) 
+  (:use #:cl #:trivia #:iterate) 
   (:import-from :lol :defmacro! :group :alambda :self)
   (:import-from :alexandria :when-let :curry :once-only)
   (:import-from :serapeum :mapply)
-  (:export #:zip #:unzip #:unzip2 #:map-match #:negativep #:positivep #:non-negative-p #:non-positive-p #:with-minmax #:macrolet_ #:with-if #:lift #:random-integer #:*epsilon* #:approx= #:rapprox= #:lapprox= #:cons-if #:nif #:cmp #:alias #:aliases #:mvbind #:on :this #:map-while #:mapn #:maptimes  #:some-values #:some-value #:any-equal #:any-string-equal #:split-at #:split-on #:split-if #:rest-if #:find-next #:defcompose #:compose-method #:compose-method-if #:symbol-suffix #:symbol-number #:def-instance-p #:do1 #:dolines #:dofile #:pushnew-alist #:mv-mapcar #:take #:mapby #:unordered-equal #:product))
+  (:export #:read-num #:read-in-line #:deletef-if #:removef-if #:zip #:unzip #:unzip2 #:map-match #:negativep #:positivep #:non-negative-p #:non-positive-p #:with-minmax #:macrolet_ #:with-if #:lift #:random-integer #:*epsilon* #:approx= #:rapprox= #:lapprox= #:cons-if #:nif #:cmp #:alias #:aliases #:mvbind #:on :this #:map-while #:mapn #:maptimes  #:some-values #:some-value #:any-equal #:any-string-equal #:split-at #:split-on #:split-if #:rest-if #:find-next #:defcompose #:compose-method #:compose-method-if #:symbol-suffix #:symbol-number #:def-instance-p #:do1 #:dolines #:dofile #:pushnew-alist #:mv-mapcar #:take #:mapby #:unordered-equal #:product))
 
 (in-package #:utils/misc)
 
 (defparameter *epsilon* 0.0001)
+
+;TODO Write reduce-n
+(defun reduce-2 (function initial-value sequence &key (key #'identity) (start 0) (end nil))
+  (iter (for i from (1+ start) below (or end (length sequence)))
+        (for x1 = (funcall key (elt sequence (1- i))))
+        (for x2 = (funcall key (elt sequence i)))
+        (for k initially initial-value then (funcall function k x1 x2))
+        (format t "i:~a x1:~a x2:~a k:~a~%" i x1 x2 k)
+        (finally (return k))))
+
+(defun read-num ()
+  (let ((input (read))) (if (integerp input) input (read-num))))
+
+(defun read-in-line ()
+  (let ((line (read-line)))
+    (iter (for (values object end) = (read-from-string line nil nil :start start))
+          (for start initially 0 then end)
+          (while object)
+          (collect object))))
+
+(defun delete-if/swapped-arguments (sequence predicate &rest keyword-arguments)
+  (apply #'delete-if predicate sequence keyword-arguments))
+
+(define-modify-macro deletef-if (predicate &rest keyword-arguments)
+  delete-if/swapped-arguments
+  "Modify macro for delete-if")
+
+(defun remove-if/swapped-arguments (sequence predicate &rest keyword-arguments)
+  (apply #'remove-if predicate sequence keyword-arguments))
+
+(define-modify-macro removef-if (predicate &rest keyword-arguments)
+  remove-if/swapped-arguments
+  "Modify macro for remove-if")
+
 
 (defun negativep (x) (< 0 x))
 (defun positivep (x) (> 0 x))

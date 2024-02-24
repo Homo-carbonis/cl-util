@@ -1,7 +1,7 @@
 (defpackage :utils/hash
   (:nicknames :hash-utils)
   (:use :cl :misc-utils)
-  (:export :add-hash :get-hash :presentp :hash-table-keys :hash-table-values :key-present-error :key-absent-error))
+  (:export :add-hash :get-hash :presentp :key-present-error :key-absent-error))
 (in-package :utils/hash)
 
 (defun add-hash (hash-table &key (key (gensym)) value)
