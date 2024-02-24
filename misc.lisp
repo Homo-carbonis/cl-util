@@ -11,8 +11,8 @@
 (defparameter *epsilon* 0.0001)
 
 ;TODO Write reduce-n
-(defun reduce-2 (function initial-value sequence &key (key #'identity) (start 0) (end nil))
-  (iter (for i from (1+ start) below (or end (length sequence)))
+(defun reduce-2 (function sequence &key (key #'identity) (start 0) (end nil) (initial-value nil ivp))
+  (iter (for i from (+ start (if ivp 2 1)) below (or end (length sequence)))
         (for x1 = (funcall key (elt sequence (1- i))))
         (for x2 = (funcall key (elt sequence i)))
         (for k initially initial-value then (funcall function k x1 x2))
