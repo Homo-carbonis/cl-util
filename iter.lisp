@@ -1,7 +1,8 @@
 (defpackage :utils/iter
   (:nicknames :iter-utils)
   (:shadow :mean)
-  (:use :cl :alexandria :iterate :lla)
+  (:shadowing-import-from :num-utils :sum)
+  (:use :cl :alexandria :iterate :num-utils)
   (:export :mean :vector-sum :vector-mean))
 
 (in-package :utils/iter)
