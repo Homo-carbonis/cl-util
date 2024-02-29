@@ -4,11 +4,20 @@
   (:import-from :lol :defmacro! :group :alambda :self)
   (:import-from :alexandria :when-let :curry :once-only)
   (:import-from :serapeum :mapply)
-  (:export #:read-num #:read-in-line #:deletef-if #:removef-if #:zip #:unzip #:unzip2 #:map-match #:negativep #:positivep #:non-negative-p #:non-positive-p #:with-minmax #:macrolet_ #:with-if #:lift #:random-integer #:*epsilon* #:approx= #:rapprox= #:lapprox= #:cons-if #:nif #:cmp #:alias #:aliases #:mvbind #:on :this #:map-while #:mapn #:maptimes  #:some-values #:some-value #:any-equal #:any-string-equal #:split-at #:split-on #:split-if #:rest-if #:find-next #:defcompose #:compose-method #:compose-method-if #:symbol-suffix #:symbol-number #:def-instance-p #:do1 #:dolines #:dofile #:pushnew-alist #:mv-mapcar #:take #:mapby #:unordered-equal #:product))
+  (:export #:elmt #:reduce-2 #:deltas #:read-num #:read-in-line #:deletef-if #:removef-if #:zip #:unzip #:unzip2 #:map-match #:negativep #:positivep #:non-negative-p #:non-positive-p #:with-minmax #:macrolet_ #:with-if #:then #:lift #:random-integer #:*epsilon* #:approx= #:rapprox= #:lapprox= #:cons-if #:nif #:cmp #:alias #:aliases #:mvbind #:on :this #:map-while #:mapn #:maptimes  #:some-values #:some-value #:any-equal #:any-string-equal #:split-at #:split-on #:split-if #:rest-if #:find-next #:defcompose #:compose-method #:compose-method-if #:symbol-suffix #:symbol-number #:def-instance-p #:do1 #:dolines #:dofile #:pushnew-alist #:mv-mapcar #:take #:mapby #:unordered-equal #:product))
 
 (in-package #:utils/misc)
 
 (defparameter *epsilon* 0.0001)
+
+(defun elmt (sequence index)
+  "elt with negtive indices. (-1 for last elt. etc.)"
+  (elt sequence (mod index (length sequence))))
+
+(defun deltas (seq)
+  (iter (for x1 in-sequence seq)
+        (for x2 in-sequence seq from 1)
+        (collect (- x2 x1))))
 
 ;TODO Write reduce-n
 (defun reduce-2 (function sequence &key (key #'identity) (start 0) (end nil) (initial-value nil ivp))
