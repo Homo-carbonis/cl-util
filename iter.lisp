@@ -1,3 +1,4 @@
+;TODO write "for x over x*" generator to iterate over subsequences.
 (defpackage :utils/iter
   (:nicknames :iter-utils)
   (:shadow :mean)
